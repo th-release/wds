@@ -7,22 +7,28 @@ import { AuthEntity } from './entitys/auth.entity';
 import { DatabasesEntity } from './entitys/databases.entity';
 import { AccountModule } from './account/account.module';
 import { redisModule } from './utils/redis';
-import { DATABASE_HOST, DATABASE_PASSWORD, DATABASE_PORT, DATABASE_SCHEMA, DATABASE_USERNAME, TYPEORM_SYBCHRONIZE } from './utils/config';
+import { ConfigurationModule } from './configuration/configuration.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: DATABASE_HOST,
-      port: DATABASE_PORT,
-      username: DATABASE_USERNAME,
-      password: DATABASE_PASSWORD,
-      database: DATABASE_SCHEMA,
-      entities: [AuthEntity, DatabasesEntity],
-      synchronize: TYPEORM_SYBCHRONIZE, // dev modes
+    TypeOrmModule.forRootAsync({
+      imports:[ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get('DATABASE_HOST'),
+        port: configService.get('DATABASE_PORT'),
+        username: configService.get('DATABASE_USERNAME'),
+        password: configService.get('DATABASE_PASSWORD'),
+        database: configService.get('DATABASE_SCHEMA'),
+        entities: [AuthEntity, DatabasesEntity],
+        synchronize: configService.get('TYPEORM_SYBCHRONIZE')
+      })
     }),
     AccountModule,
-    redisModule
+    redisModule,
+    ConfigurationModule
   ],
   controllers: [AppController, AccountController],
   providers: [AccountService],
